@@ -1802,6 +1802,16 @@ choice
 
 config BUILD_ARM64_KERNEL_COMPRESSION_GZIP
 	bool "Build compressed kernel image"
+
+config BUILD_ARM64_EMBEDDED_DTB
+	bool "Embed DTB into kernel image"
+	depends on OF
+	help
+	  Embed DTB directly into kernel image and ignore DTB from bootloader.
+
+config BUILD_ARM64_APPENDED_DTB_IMAGE_NAMES
+	string "Default dtb names"
+	depends on BUILD_ARM64_APPENDED_DTB_IMAGE
 	help
 	  Build a kernel image using gzip
 	  compression. gzip is based on the DEFLATE

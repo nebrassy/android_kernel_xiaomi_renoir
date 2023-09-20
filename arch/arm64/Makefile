@@ -177,6 +177,36 @@ dtbo.img: dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 endif
 
+%.dtb: scripts
+	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
+
+PHONY += dtbs dtbs_install
+
+dtbs: prepare scripts
+	$(Q)$(MAKE) $(build)=$(boot)/dts
+
+ifeq ($(CONFIG_BUILD_ARM64_EMBEDDED_DTB),y)
+$(obj)/kernel/embedded-dtb.c: dtbs dtbo.img
+	$(Q)$(MAKE) $(build)=$(boot) $(obj)/arch/arm64/boot/../kernel/embedded-dtb.c
+arch/arm64/kernel: $(obj)/kernel/embedded-dtb.c
+endif
+
+dtbs_install:
+	$(Q)$(MAKE) $(dtbinst)=$(boot)/dts
+
+Image-dtb Image.gz-dtb Image.lz4-dtb: vmlinux scripts dtbs
+	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+
+dtbo.img: $(boot)/dts/dtboimg.cfg dtbs
+	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+
+
+PHONY += apply_dtbo
+dtboapply := -f $(if $(KBUILD_SRC),$(srctree)/)scripts/Makefile.dtboapply obj
+apply_dtbo: Image.lz4-dtb dtbo.img
+	$(Q)$(MAKE) $(dtboapply)=$(boot) KERNEL_DTB=Image.lz4-dtb DTBO=dtbo.img
+
+>>>>>>> 606f69cbddf4 (boot: Embed fully integrated DTBs instead of using dtbo partition)
 PHONY += vdso_install
 vdso_install:
 	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso $@

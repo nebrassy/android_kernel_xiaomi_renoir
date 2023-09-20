@@ -1327,9 +1327,13 @@ void *__init fixmap_remap_fdt(phys_addr_t dt_phys, int *size, pgprot_t prot)
 	if (fdt_magic(dt_virt) != FDT_MAGIC)
 		return NULL;
 
+#ifdef CONFIG_BUILD_ARM64_EMBEDDED_DTB
+	*size = MAX_FDT_SIZE;
+#else
 	*size = fdt_totalsize(dt_virt);
 	if (*size > MAX_FDT_SIZE)
 		return NULL;
+#endif
 
 	if (offset + *size > SWAPPER_BLOCK_SIZE)
 		create_mapping_noalloc(round_down(dt_phys, SWAPPER_BLOCK_SIZE), dt_virt_base,
@@ -1340,7 +1344,20 @@ void *__init fixmap_remap_fdt(phys_addr_t dt_phys, int *size, pgprot_t prot)
 
 int __init arch_ioremap_p4d_supported(void)
 {
-	return 0;
+
+
+
+	void *dt_virt;
+	int size;
+
+	dt_virt = __fixmap_remap_fdt(dt_phys, &size,
+		IS_ENABLED(CONFIG_BUILD_ARM64_EMBEDDED_DTB) ? PAGE_KERNEL : PAGE_KERNEL_RO);
+	if (!dt_virt)
+		return NULL;
+
+	memblock_reserve(dt_phys, size);
+	return dt_virt;
+
 }
 
 int __init arch_ioremap_pud_supported(void)
